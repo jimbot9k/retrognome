@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"retrognome/internal/configuration"
-	"retrognome/internal/router"
 )
 
 func main() {
@@ -18,11 +17,13 @@ func main() {
 	}
 	log.Printf("Configuration for %s loaded successfully", configuration.AppName)
 
-	router := router.NewRouter()
-	router.PathHandler( "/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Sup Router!"))
+	fileServer := http.FileServer(http.Dir("web"))
+	http.Handle("/", fileServer)
+
+	http.HandleFunc("/lmao", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("lmao"))
 	})
 
 	log.Printf("Listening on http://127.0.0.1:%d", configuration.Port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", configuration.Port), router))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", configuration.Port), nil))
 }
