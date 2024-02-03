@@ -10,9 +10,9 @@ type ApplicationConfiguration struct {
 	Port    int    `yaml:"port"`
 }
 
-func LoadApplicationConfiguration() (ApplicationConfiguration, error) {
+func LoadApplicationConfiguration(location string) (ApplicationConfiguration, error) {
 
-	file, err := os.Open("config.yaml")
+	file, err := os.Open(location)
 
 	if err != nil {
 		return ApplicationConfiguration{}, err

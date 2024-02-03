@@ -1,4 +1,4 @@
 config.yaml
-web/
+.air.toml
+tmp/
 .vscode/
-retrognome
