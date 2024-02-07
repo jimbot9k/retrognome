@@ -2,13 +2,15 @@ package main
 
 import (
 	"fmt"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"log"
 	"net/http"
 	"retrognome/internal/configuration"
 	"retrognome/internal/handlers"
+	"retrognome/internal/repository"
 	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
@@ -21,6 +23,15 @@ func main() {
 	}
 	log.Printf("Configuration for %s loaded successfully", configuration.AppName)
 
+	database := repository.NewSqliteDB()
+	defer database.Close()
+	err = repository.UpdateSchema(database)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	log.Printf("Database loaded successfully")
+
 	router := chi.NewRouter()
 
 	router.Use(middleware.RequestID)
@@ -32,11 +43,14 @@ func main() {
 	fileServer := http.FileServer(http.Dir("web"))
 	router.Handle("/static/*", http.StripPrefix("/static", fileServer))
 
+	userRepository := repository.NewUserRepository(database)
+	userHandler := handlers.NewUserHandler(userRepository)
+
 	router.Get("/", handlers.LoadHomePage)
 	router.Get("/login", handlers.LoadLoginPage)
 	router.Get("/register", handlers.LoadRegistrationPage)
-	router.Post("/login", handlers.LoginUser)
-	router.Post("/register", handlers.RegisterUser)
+	router.Post("/login", userHandler.LoginUser)
+	router.Post("/register", userHandler.RegisterUser)
 
 	log.Printf("Listening on http://127.0.0.1:%d", configuration.Port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", configuration.Port), router))

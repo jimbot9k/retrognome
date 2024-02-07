@@ -15,5 +15,5 @@ func LoadLoginPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func LoadRegistrationPage(w http.ResponseWriter, r *http.Request) {
-	template.RenderTemplate(w, "register.html", "")
+	template.RenderTemplate(w, "registration.html", "")
 }

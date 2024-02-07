@@ -1,5 +1,13 @@
 {{ block "content" . }}
-    <h1 class="text-3xl font-bold underline">
-        RetroGnome
-    </h1>
+<div class="bg-white p-8 rounded shadow-md w-80">
+    <div class="flex items-center justify-between mb-4">
+        <h1 class="text-3xl font-semibold">Retrognome</h1>
+        <img src="static/logo.png" alt="Logo" class="h-16 mr-2">
+    </div>
+    <h2 class="text-2xl font-semibold mb-6">Welcome!</h2>
+    <div class="flex flex-col gap-4">
+        <a href="/login" class="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 text-center">Login</a>
+        <a href="/register" class="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 text-center">Register</a>
+    </div>
+</div>
 {{ end }}

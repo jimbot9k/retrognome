@@ -2,5 +2,10 @@ package types
 
 type User struct {
 	ID       int
-	Username string
+	Email    string
+	Password string
+}
+
+func (user *User) IsEmptyUser() bool {
+	return user.ID == 0 && user.Email == "" && user.Password == ""
 }
