@@ -44,13 +44,17 @@ func main() {
 	router.Handle("/static/*", http.StripPrefix("/static", fileServer))
 
 	userRepository := repository.NewUserRepository(database)
-	userHandler := handlers.NewUserHandler(userRepository)
+	sessionRepository := repository.NewSessionRepository(database)
+	userHandler := handlers.NewUserHandler(userRepository, sessionRepository)
+	pageHandler := handlers.NewPageHandler(sessionRepository)
 
-	router.Get("/", handlers.LoadHomePage)
-	router.Get("/login", handlers.LoadLoginPage)
-	router.Get("/register", handlers.LoadRegistrationPage)
+	router.Get("/", pageHandler.LoadHomePage)
+	router.Get("/register", pageHandler.LoadRegistrationPage)
+	router.Get("/login", pageHandler.LoadLoginPage)
+
 	router.Post("/login", userHandler.LoginUser)
 	router.Post("/register", userHandler.RegisterUser)
+	router.Post("/logout", userHandler.LogoutUser)
 
 	log.Printf("Listening on http://127.0.0.1:%d", configuration.Port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", configuration.Port), router))

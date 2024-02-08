@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"log"
 	"retrognome/internal/types"
 )
 
@@ -14,13 +15,24 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 }
 
 func (u *UserRepository) CreateUser(user *types.User) error {
-	u.DB.Exec("INSERT INTO users (email, password) VALUES (?, ?)", user.Email, user.Password)
+	_, err := u.DB.Exec("INSERT INTO users (email, password, salt) VALUES (?, ?, ?)", user.Email, user.Password, user.Salt)
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
 	return nil
 }
 
 func (u *UserRepository) GetUserByEmail(email string) (*types.User, error) {
-	userRowData := u.DB.QueryRow("SELECT id, email, password FROM users WHERE email = ?", email)
+	userRowData := u.DB.QueryRow("SELECT id, email, password, salt FROM users WHERE email = ?", email)
 	user := &types.User{}
-	userRowData.Scan(&user.ID, &user.Email, &user.Password)
+
+	err := userRowData.Scan(&user.ID, &user.Email, &user.Password, &user.Salt)
+	if err == sql.ErrNoRows {
+		return user, nil
+	} else if err != nil {
+		log.Fatal(err)
+		return user, err
+	}
 	return user, nil
 }

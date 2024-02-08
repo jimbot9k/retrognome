@@ -4,14 +4,16 @@ import (
 	"net/http"
 	"retrognome/internal/repository"
 	"retrognome/internal/types"
+	"retrognome/internal/utils"
 )
 
 type UserHandler struct {
-	userRepository *repository.UserRepository
+	userRepository    *repository.UserRepository
+	sessionRepository *repository.SessionRepository
 }
 
-func NewUserHandler(userRepository *repository.UserRepository) *UserHandler {
-	return &UserHandler{userRepository: userRepository}
+func NewUserHandler(userRepository *repository.UserRepository, sessionRepository *repository.SessionRepository) *UserHandler {
+	return &UserHandler{userRepository: userRepository, sessionRepository: sessionRepository}
 }
 
 func (userHandler *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
@@ -39,13 +41,19 @@ func (userHandler *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if user.Password != password {
+	if user.Password != utils.HashPassword(password, user.Salt) {
 		http.Error(w, "Invalid password", http.StatusUnauthorized)
 		return
 	}
 
-	/// Set session cookie
-
+	session := &types.Session{UserID: user.ID, Token: utils.RandomString(128)}
+	err = userHandler.sessionRepository.CreateSession(session)
+	if err != nil {
+		http.Error(w, "Something went wrong. Please try again.", http.StatusInternalServerError)
+		return
+	}
+	cookie := &http.Cookie{Name: "session_token", Value: session.Token, Path: "/"}
+	http.SetCookie(w, cookie)
 	http.Header.Add(w.Header(), "HX-Redirect", "/")
 }
 
@@ -107,12 +115,31 @@ func (userHandler *UserHandler) RegisterUser(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	user := &types.User{Email: email, Password: password}
+	salt := utils.RandomString(128)
+	password = utils.HashPassword(password, salt)
+	user := &types.User{Email: email, Password: password, Salt: salt}
 	err = userHandler.userRepository.CreateUser(user)
 	if err != nil {
 		http.Error(w, "Something went wrong. Please try again.", http.StatusInternalServerError)
 		return
 	}
 
+	http.Header.Add(w.Header(), "HX-Redirect", "/")
+}
+
+func (userHandler *UserHandler) LogoutUser(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("session_token")
+	if err != nil {
+		http.Error(w, "Something went wrong. Please try again.", http.StatusInternalServerError)
+		return
+	}
+	sessionToken := cookie.Value
+	err = userHandler.sessionRepository.DeleteSessionByToken(sessionToken)
+	if err != nil {
+		http.Error(w, "Something went wrong. Please try again.", http.StatusInternalServerError)
+		return
+	}
+	cookie = &http.Cookie{Name: "session_token", Value: "", Path: "/", MaxAge: -1}
+	http.SetCookie(w, cookie)
 	http.Header.Add(w.Header(), "HX-Redirect", "/")
 }
