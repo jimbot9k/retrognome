@@ -54,7 +54,7 @@ func main() {
 
 	router.Post("/login", userHandler.LoginUser)
 	router.Post("/register", userHandler.RegisterUser)
-	router.Post("/logout", userHandler.LogoutUser)
+	router.HandleFunc("/logout", userHandler.LogoutUser)
 
 	log.Printf("Listening on http://127.0.0.1:%d", configuration.Port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", configuration.Port), router))
