@@ -2,14 +2,15 @@ package main
 
 import (
 	"fmt"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"log"
 	"net/http"
 	"retrognome/internal/configuration"
+	"retrognome/internal/database"
 	"retrognome/internal/handlers"
 	"retrognome/internal/repository"
 	"time"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
@@ -22,9 +23,9 @@ func main() {
 	}
 	log.Printf("Configuration for %s loaded successfully", configuration.AppName)
 
-	database := repository.NewSqliteDB()
-	defer database.Close()
-	err = repository.UpdateSchema(database)
+	db := database.NewSqliteDB()
+	defer db.Close()
+	err = database.UpdateSchema(db)
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -42,20 +43,22 @@ func main() {
 	fileServer := http.FileServer(http.Dir("web"))
 	router.Handle("/static/*", http.StripPrefix("/static", fileServer))
 
-	userRepository := repository.NewUserRepository(database)
-	sessionRepository := repository.NewSessionRepository(database)
-	retroRepository := repository.NewRetroRepository(database)
+	userRepository := repository.NewUserRepository(db)
+	sessionRepository := repository.NewSessionRepository(db)
+	retroRepository := repository.NewRetroRepository(db)
 
-	loginHandler := handlers.NewLoginHandler(sessionRepository, userRepository)
-	router.Get("/register", loginHandler.LoadRegistrationPage)
-	router.Post("/register", loginHandler.RegisterUser)
-	router.Get("/login", loginHandler.LoadLoginPage)
-	router.Post("/login", loginHandler.LoginUser)
-	router.HandleFunc("/logout", loginHandler.LogoutUser)
+	sessionHandler := handlers.NewSessionHandler(sessionRepository)
+	loginHandler := handlers.NewLoginHandler(userRepository, sessionRepository)
+	retroHandler := handlers.NewRetroHandler(userRepository, retroRepository)
 
-	retroHandler := handlers.NewRetroHandler(sessionRepository, userRepository, retroRepository)
-	router.Get("/", retroHandler.LoadHomePage)
-	router.Post("/retro", retroHandler.CreateRetro)
+	router.Get("/register", sessionHandler.RedirectValidSession(loginHandler.LoadRegistrationPage))
+	router.Post("/register", sessionHandler.RedirectValidSession(loginHandler.RegisterUser))
+	router.Get("/login", sessionHandler.RedirectValidSession(loginHandler.LoadLoginPage))
+	router.Post("/login", sessionHandler.RedirectValidSession(loginHandler.LoginUser))
+	router.HandleFunc("/logout", sessionHandler.RedirectInvalidSession(loginHandler.DeleteSession))
+
+	router.Get("/", sessionHandler.RedirectInvalidSession(retroHandler.LoadHomePage))
+	router.Post("/retro", sessionHandler.RedirectInvalidSession(retroHandler.CreateRetro))
 	router.Post("/retro/{retroId}/clone", retroHandler.CloneRetro)
 	router.Get("/retro/{retroId}", retroHandler.LoadRetroPage)
 

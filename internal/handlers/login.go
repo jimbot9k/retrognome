@@ -6,47 +6,24 @@ import (
 	"retrognome/internal/template"
 	"retrognome/internal/types"
 	"retrognome/internal/utils"
+	"time"
 )
 
 type LoginHandler struct {
-	sessionRepository *repository.SessionRepository
 	userRepository    *repository.UserRepository
+	sessionRepository *repository.SessionRepository
 }
 
-func NewLoginHandler(sessionRepository *repository.SessionRepository, userRepository *repository.UserRepository) *LoginHandler {
-	return &LoginHandler{sessionRepository: sessionRepository, userRepository: userRepository}
+func NewLoginHandler(userRepository *repository.UserRepository, sessionRepository *repository.SessionRepository) *LoginHandler {
+	return &LoginHandler{userRepository: userRepository, sessionRepository: sessionRepository}
 }
 
 func (pageHandler *LoginHandler) LoadLoginPage(w http.ResponseWriter, r *http.Request) {
-
-	token, _ := r.Cookie("session_token")
-	session := &types.Session{}
-	if token != nil {
-		session = pageHandler.sessionRepository.GetSessionByToken(token.Value)
-	}
-
-	if session.IsEmptySession() {
-		template.RenderTemplate(w, "", "head.html", "login.html")
-		return
-	}
-
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	template.RenderTemplate(w, "", "head.html", "login.html")
 }
 
 func (pageHandler *LoginHandler) LoadRegistrationPage(w http.ResponseWriter, r *http.Request) {
-
-	token, _ := r.Cookie("session_token")
-	session := &types.Session{}
-	if token != nil {
-		session = pageHandler.sessionRepository.GetSessionByToken(token.Value)
-	}
-
-	if session.IsEmptySession() {
-		template.RenderTemplate(w, "", "head.html", "registration.html")
-		return
-	}
-
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	template.RenderTemplate(w, "", "head.html", "registration.html")
 }
 
 func (userHandler *LoginHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
@@ -79,7 +56,7 @@ func (userHandler *LoginHandler) LoginUser(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	session := &types.Session{UserID: user.ID, Token: utils.RandomString(128)}
+	session := &types.Session{UserID: user.ID, Token: utils.RandomString(128), CreatedAt: time.Now()}
 	err = userHandler.sessionRepository.CreateSession(session)
 	if err != nil {
 		http.Error(w, "Something went wrong. Please try again.", http.StatusInternalServerError)
@@ -160,7 +137,7 @@ func (userHandler *LoginHandler) RegisterUser(w http.ResponseWriter, r *http.Req
 	http.Header.Add(w.Header(), "HX-Redirect", "/")
 }
 
-func (userHandler *LoginHandler) LogoutUser(w http.ResponseWriter, r *http.Request) {
+func (userHandler *LoginHandler) DeleteSession(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_token")
 	if err != nil {
 		http.Error(w, "Something went wrong. Please try again.", http.StatusInternalServerError)

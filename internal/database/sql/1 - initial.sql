@@ -11,6 +11,7 @@ CREATE TABLE sessions (
     id INTEGER PRIMARY KEY,
     user_id INTEGER NOT NULL,
     token VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 

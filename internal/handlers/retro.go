@@ -4,39 +4,25 @@ import (
 	"net/http"
 	"retrognome/internal/repository"
 	"retrognome/internal/template"
-	"retrognome/internal/types"
 )
 
 type RetroHandler struct {
-	sessionRepository *repository.SessionRepository
-	userRepository    *repository.UserRepository
-	retroRepository   *repository.RetroRepository
+	userRepository  *repository.UserRepository
+	retroRepository *repository.RetroRepository
 }
 
-func NewRetroHandler(sessionRepository *repository.SessionRepository, userRepository *repository.UserRepository, retroRepository *repository.RetroRepository) *RetroHandler {
-	return &RetroHandler{sessionRepository: sessionRepository, userRepository: userRepository, retroRepository: retroRepository}
+func NewRetroHandler(userRepository *repository.UserRepository, retroRepository *repository.RetroRepository) *RetroHandler {
+	return &RetroHandler{userRepository: userRepository, retroRepository: retroRepository}
 }
 
 func (pageHandler *RetroHandler) LoadHomePage(w http.ResponseWriter, r *http.Request) {
-
-	token, _ := r.Cookie("session_token")
-	session := &types.Session{}
-	if token != nil {
-		session = pageHandler.sessionRepository.GetSessionByToken(token.Value)
-	}
-
-	if session.IsEmptySession() {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-
 	template.RenderTemplate(w, "", "head.html", "dashboard.html", "navbar.html")
 }
 
 func (pageHandler *RetroHandler) CreateRetro(w http.ResponseWriter, r *http.Request) {
 	/// Return message saying not implemented
 	w.Write([]byte("Create Retro not implemented"))
-	w.WriteHeader(http.StatusNotImplemented)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (pageHandler *RetroHandler) CloneRetro(w http.ResponseWriter, r *http.Request) {

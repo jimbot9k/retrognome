@@ -1,4 +1,4 @@
-package repository
+package database
 
 import (
 	"database/sql"
@@ -6,23 +6,13 @@ import (
 	"log"
 	"os"
 	"time"
-
-	_ "github.com/mattn/go-sqlite3"
 )
 
-func NewSqliteDB() *sql.DB {
-	// Implement logic to open a connection to a SQLite database
-	// Use the database/sql package to open a connection
-	db, err := sql.Open("sqlite3", "file:retrognome.sqlite?mode=rwc")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return db
-}
-
 func UpdateSchema(db *sql.DB) error {
-	files, err := os.ReadDir("internal/sql/")
+
+	const sqlPath = "internal/database/sql/"
+
+	files, err := os.ReadDir(sqlPath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -33,7 +23,7 @@ func UpdateSchema(db *sql.DB) error {
 	}
 
 	for _, file := range fileNames {
-		fileData, err := os.ReadFile(fmt.Sprintf("internal/sql/%s", file))
+		fileData, err := os.ReadFile(fmt.Sprintf("%s%s", sqlPath, file))
 		if err != nil {
 			log.Fatal(err)
 		}
