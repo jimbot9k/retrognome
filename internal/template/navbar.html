@@ -1,0 +1,25 @@
+{{ block "navbar" . }}
+<nav class="bg-gray-800 p-4 w-full">
+  <div class="mx-auto w-full">
+    <div class="flex justify-between items-center">
+      <a
+        href="/"
+        class="text-white text-lg font-semibold flex items-center space-x-2"
+      >
+        <img src="static/logo.png" alt="Logo" class="h-8 mr-2" />
+        <h1 class="text-3xl font-semibold">Retrognome</h1>
+      </a>
+
+      <ul class="flex space-x-4">
+        <li>
+          <a
+            hx-post="/logout"
+            class="text-white hover:underline hover:text-gray-100 hover:cursor-pointer"
+            >Logout</a
+          >
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+{{ end }}

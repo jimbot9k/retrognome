@@ -3,20 +3,53 @@ package handlers
 import (
 	"net/http"
 	"retrognome/internal/repository"
+	"retrognome/internal/template"
 	"retrognome/internal/types"
 	"retrognome/internal/utils"
 )
 
-type UserHandler struct {
-	userRepository    *repository.UserRepository
+type LoginHandler struct {
 	sessionRepository *repository.SessionRepository
+	userRepository    *repository.UserRepository
 }
 
-func NewUserHandler(userRepository *repository.UserRepository, sessionRepository *repository.SessionRepository) *UserHandler {
-	return &UserHandler{userRepository: userRepository, sessionRepository: sessionRepository}
+func NewLoginHandler(sessionRepository *repository.SessionRepository, userRepository *repository.UserRepository) *LoginHandler {
+	return &LoginHandler{sessionRepository: sessionRepository, userRepository: userRepository}
 }
 
-func (userHandler *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
+func (pageHandler *LoginHandler) LoadLoginPage(w http.ResponseWriter, r *http.Request) {
+
+	token, _ := r.Cookie("session_token")
+	session := &types.Session{}
+	if token != nil {
+		session = pageHandler.sessionRepository.GetSessionByToken(token.Value)
+	}
+
+	if session.IsEmptySession() {
+		template.RenderTemplate(w, "", "head.html", "login.html")
+		return
+	}
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func (pageHandler *LoginHandler) LoadRegistrationPage(w http.ResponseWriter, r *http.Request) {
+
+	token, _ := r.Cookie("session_token")
+	session := &types.Session{}
+	if token != nil {
+		session = pageHandler.sessionRepository.GetSessionByToken(token.Value)
+	}
+
+	if session.IsEmptySession() {
+		template.RenderTemplate(w, "", "head.html", "registration.html")
+		return
+	}
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func (userHandler *LoginHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
@@ -57,7 +90,7 @@ func (userHandler *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request
 	http.Header.Add(w.Header(), "HX-Redirect", "/")
 }
 
-func (userHandler *UserHandler) RegisterUser(w http.ResponseWriter, r *http.Request) {
+func (userHandler *LoginHandler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
@@ -127,7 +160,7 @@ func (userHandler *UserHandler) RegisterUser(w http.ResponseWriter, r *http.Requ
 	http.Header.Add(w.Header(), "HX-Redirect", "/")
 }
 
-func (userHandler *UserHandler) LogoutUser(w http.ResponseWriter, r *http.Request) {
+func (userHandler *LoginHandler) LogoutUser(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_token")
 	if err != nil {
 		http.Error(w, "Something went wrong. Please try again.", http.StatusInternalServerError)

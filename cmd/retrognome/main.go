@@ -8,7 +8,6 @@ import (
 	"retrognome/internal/handlers"
 	"retrognome/internal/repository"
 	"time"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -45,16 +44,32 @@ func main() {
 
 	userRepository := repository.NewUserRepository(database)
 	sessionRepository := repository.NewSessionRepository(database)
-	userHandler := handlers.NewUserHandler(userRepository, sessionRepository)
-	pageHandler := handlers.NewPageHandler(sessionRepository)
+	retroRepository := repository.NewRetroRepository(database)
 
-	router.Get("/", pageHandler.LoadHomePage)
-	router.Get("/register", pageHandler.LoadRegistrationPage)
-	router.Get("/login", pageHandler.LoadLoginPage)
+	loginHandler := handlers.NewLoginHandler(sessionRepository, userRepository)
+	router.Get("/register", loginHandler.LoadRegistrationPage)
+	router.Post("/register", loginHandler.RegisterUser)
+	router.Get("/login", loginHandler.LoadLoginPage)
+	router.Post("/login", loginHandler.LoginUser)
+	router.HandleFunc("/logout", loginHandler.LogoutUser)
 
-	router.Post("/login", userHandler.LoginUser)
-	router.Post("/register", userHandler.RegisterUser)
-	router.HandleFunc("/logout", userHandler.LogoutUser)
+	retroHandler := handlers.NewRetroHandler(sessionRepository, userRepository, retroRepository)
+	router.Get("/", retroHandler.LoadHomePage)
+	router.Post("/retro", retroHandler.CreateRetro)
+	router.Post("/retro/{retroId}/clone", retroHandler.CloneRetro)
+	router.Get("/retro/{retroId}", retroHandler.LoadRetroPage)
+
+	router.Post("/retro/{retroId}/column/{columnId}/card", retroHandler.CreateCard)
+	router.Delete("/retro/{retroId}/column/{columnId}/card/{cardId}", retroHandler.DeleteCard)
+	router.Put("/retro/{retroId}/column/{columnId}/card/{cardId}", retroHandler.MoveCard)
+
+	router.Post("/retro/{retroId}/column", retroHandler.CreateColumn)
+	router.Delete("/retro/{retroId}/column/{columnId}", retroHandler.DeleteColumn)
+	router.Put("/retro/{retroId}/column/{columnId}", retroHandler.RenameColumn)
+
+	router.Post("/retro/{retroId}/todo", retroHandler.CreateTodo)
+	router.Delete("/retro/{retroId}/todo/{todoId}", retroHandler.DeleteTodo)
+	router.Put("/retro/{retroId}/todo/{todoId}", retroHandler.UpdateTodo)
 
 	log.Printf("Listening on http://127.0.0.1:%d", configuration.Port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", configuration.Port), router))

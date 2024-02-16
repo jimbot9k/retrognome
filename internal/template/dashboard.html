@@ -1,23 +1,21 @@
 {{ block "content" . }}
 <div class="flex flex-col w-full h-full justify-start align-top">
-    <nav class="bg-gray-800 p-4 w-full">
-        <div class= "mx-auto w-full">
-            <div class="flex justify-between items-center">
-                    <div class="flex items-center space-x-2">   
-                        <img src="static/logo.png" alt="Logo" class="h-8 mr-2">
-                        <a href="/" class="text-white text-lg font-semibold">Retrognome</a>
-                    </div>
-                    
-                    <ul class="flex space-x-4">
-                        <li><a hx-post="/logout" class="text-white hover:underline hover:text-gray-100 hover:cursor-pointer">Logout</a></li>
-                        <!-- Add more navbar items as needed -->
-                    </ul>
-            </div>
-        </div>
-    </nav>
-
-    <div class="bg-white p-4 m-4 rounded shadow-md h-full">
-        <p>Lmao</p>
+  {{ template "navbar" . }}
+  <div class="m-4 rounded h-full grid grid-cols-1 gap-4 md:grid-cols-2">
+    <div class="p-4 bg-white shadow">
+      <h2 class="text-2xl font-semibold">My Retros</h2>
+      {{ range .Retros }}
+                  <div class="flex flex-col p-4 my-2 bg-gray-100 rounded">
+        <h3>{{ .Name }}</h3>
+        <p>{{ .Description }}</p>
+        <a href="/retro/{{ .ID }}" class="text-blue-500">Open</a>
+      </div>
+      {{ end }}
     </div>
+
+    <div class="p-4 bg-white shadow">
+      <h2 class="text-2xl font-semibold">My Teams</h2>
+    </div>
+  </div>
 </div>
 {{ end }}
